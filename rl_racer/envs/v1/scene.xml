@@ -1,0 +1,91 @@
+<mujoco>
+
+  <compiler angle="degree" meshdir="assets" texturedir="assets"/>
+
+  <statistic center="0 0 1" extent="2.5"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="120" elevation="-40"/>
+  </visual>
+
+  <asset>
+    <mesh file="drone.stl" scale="0.001 0.001 0.001"/>
+
+    <texture type="2d" name="arrow" file="arrow.png"/>
+    <material name="arrow" texture="arrow"/>
+
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="1 1" reflectance="0.2"/>
+  </asset>
+
+  <default>
+    <default class="waypoint">
+      <geom contype="0" conaffinity="0" size="1" rgba="0 1 0 0.2"/>
+    </default>
+
+    <default class="visual">
+      <geom contype="0" conaffinity="0"/>
+    </default>
+  </default>
+
+  <worldbody>
+
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 0.05" pos="0 0 0" type="plane" material="groundplane"/>
+
+    <body name="drone" pos="0 0 0.05">
+      <freejoint name="drone_joint"/>
+      <!-- <geom mass="0.450" type="mesh" mesh="drone" euler="0 0 90"/> -->
+      <geom mass="0.450" type="box" size="0.15 0.15 0.05" material="arrow"/>
+    </body>
+
+    <!-- <body name="wp0" pos="0 0 2">
+      <geom class="waypoint"/>
+    </body>
+
+    <body name="wp1" pos="5 0 2">
+      <geom class="waypoint"/>
+    </body>
+
+    <body name="wp2" pos="0 5 2">
+      <geom class="waypoint"/>
+    </body>
+
+    <body name="wp3" pos="0 0 4">
+      <geom class="waypoint"/>
+    </body>
+
+    <body name="wp4" pos="0 -5 2">
+      <geom class="waypoint"/>
+    </body>
+
+    <body name="wp5" pos="-5 0 2">
+      <geom class="waypoint"/>
+    </body> -->
+
+  </worldbody>
+
+  <!-- <actuator> -->
+    <!-- <motor gear="1 0 5 0 0 0" joint="drone_joint"/> -->
+    <!-- <motor gear="5 0 0 0 0 0" joint="drone_joint"/>
+    <motor gear="5 0 0 0 0 0" joint="drone_joint"/>
+    <motor gear="0.01 0 0 0 0 0" joint="drone_joint"/>
+    <motor gear="0.01 0 0 0 0 0" joint="drone_joint"/>
+    <motor gear="0.01 0 0 0 0 0" joint="drone_joint"/> -->
+    <!-- <motor name="fx" gear="5 0 0 0    0    0"    joint="drone_joint"/> -->
+    <!-- <motor name="fy" gear="0 5 0 0    0    0"    joint="drone_joint"/> -->
+    <!-- <motor name="fz" gear="0 0 5 0    0    0"    joint="drone_joint"/> -->
+    <!-- <motor name="tx" gear="0 0 0 0.01 0    0"    joint="drone_joint"/> -->
+    <!-- <motor name="ty" gear="0 0 0 0    0.01 0"    joint="drone_joint"/> -->
+    <!-- <motor name="tz" gear="0 0 0 0    0    0.01" joint="drone_joint"/> -->
+    <!-- <motor name="thrust" ctrllimited="true" ctrlrange="0 1" gear="0 0 5 0 0 0" site="drone_site"/>
+    <motor name="tx" ctrllimited="true" ctrlrange="-1 1" gear="0 0 0 0.01 0 0" site="drone_site"/>
+    <motor name="ty" ctrllimited="true" ctrlrange="-1 1" gear="0 0 0 0 0.01 0" site="drone_site"/>
+    <motor name="tz" ctrllimited="true" ctrlrange="-1 1" gear="0 0 0 0 0 0.01" site="drone_site"/> -->
+  <!-- </actuator> -->
+
+</mujoco>
