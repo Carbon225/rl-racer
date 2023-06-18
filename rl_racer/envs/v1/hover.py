@@ -21,6 +21,7 @@ class HoverV1(PipelineEnv):
         gravity: float = 9.81,
         hover_throttle: float = 0.25,
         hover_target=jnp.array([0.0, 0.0, 1.0]),
+        clip_obs: bool = False,
         **kwargs,
     ):
         path = Path(__file__).parent / 'scene.xml'
@@ -36,6 +37,7 @@ class HoverV1(PipelineEnv):
         self._max_ang_vel = max_ang_vel
         self._torque = inertia * max_ang_acc
         self._max_thrust = mass * gravity / hover_throttle
+        self._clip_obs = clip_obs
 
     @property
     def action_size(self) -> int:
@@ -107,9 +109,13 @@ class HoverV1(PipelineEnv):
         target_vec = target_vec / jnp.linalg.norm(target_vec)
         target_vec = drone_rot.do(Transform.create(pos=target_vec)).pos
 
+        if self._clip_obs:
+            drone_vel = jnp.clip(drone_vel, -1.0, 1.0)
+            drone_ang = jnp.clip(drone_ang, -1.0, 1.0)
+
         return jnp.concatenate([
-            jnp.clip(drone_vel, -1.0, 1.0),
-            jnp.clip(drone_ang, -1.0, 1.0),
+            drone_vel,
+            drone_ang,
             target_vec,
         ])
 
