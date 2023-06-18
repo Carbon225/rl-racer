@@ -49,12 +49,9 @@ class HoverV1(PipelineEnv):
         pipeline_state = self.pipeline_init(q, qd)
         obs = self._get_obs(pipeline_state)
 
-        distance = jnp.linalg.norm(pipeline_state.q[:3] - self._hover_target)
-
         reward, done, zero = jnp.zeros(3)
         metrics = {
             'reward': zero,
-            'distance': distance,
         }
         return State(pipeline_state, obs, reward, done, metrics)
 
@@ -81,7 +78,7 @@ class HoverV1(PipelineEnv):
 
         drone_xyz = pipeline_state.q[:3]
         distance = jnp.linalg.norm(drone_xyz - self._hover_target)
-        reward = state.metrics['distance'] - distance
+        reward = -distance
 
         # observation
 
@@ -91,7 +88,6 @@ class HoverV1(PipelineEnv):
 
         state.metrics.update(
             reward=reward,
-            distance=distance,
         )
         return state.replace(
             pipeline_state=pipeline_state, obs=obs, reward=reward
@@ -112,8 +108,8 @@ class HoverV1(PipelineEnv):
         target_vec = drone_rot.do(Transform.create(pos=target_vec)).pos
 
         return jnp.concatenate([
-            drone_vel,
-            drone_ang,
+            jnp.clip(drone_vel, -1.0, 1.0),
+            jnp.clip(drone_ang, -1.0, 1.0),
             target_vec,
         ])
 
