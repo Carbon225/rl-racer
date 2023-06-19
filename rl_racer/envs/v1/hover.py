@@ -18,6 +18,7 @@ class HoverV1(PipelineEnv):
         reset_noise_scale: float = 2.0,
         min_z: float = 0.5,
         max_distance: float = 5.0,
+        velocity_penalty: float = 0.05,
         max_ang_vel: jnp.ndarray = jnp.array([13.962634, 13.962634, 10.471976]),
         max_ang_acc: jnp.ndarray = jnp.array([13.962634, 13.962634, 10.471976]),
         gravity: float = 9.81,
@@ -36,6 +37,7 @@ class HoverV1(PipelineEnv):
         self._reset_noise_scale = reset_noise_scale
         self._min_z = min_z
         self._max_distance = max_distance
+        self._velocity_penalty = velocity_penalty
         self._hover_target = sys.init_q[:3]
         self._max_ang_vel = max_ang_vel
         self._torque = inertia * max_ang_acc
@@ -92,7 +94,9 @@ class HoverV1(PipelineEnv):
 
         # reward
 
-        reward = healthy * (1.0 - distance / self._max_distance)
+        velocity_penalty = self._velocity_penalty * jnp.sum(jnp.square(pipeline_state.qd))
+        distance_reward = 1.0 - distance / self._max_distance
+        reward = healthy * distance_reward - velocity_penalty
 
         # observation
 
