@@ -37,7 +37,7 @@
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" pos="0 0 0" type="plane" material="groundplane"/>
 
-    <body name="drone" pos="0 0 0.05">
+    <body name="drone" pos="0 0 0.1">
       <freejoint name="drone_joint"/>
       <!-- <geom mass="0.450" type="mesh" mesh="drone" euler="0 0 90"/> -->
       <geom mass="0.450" type="box" size="0.15 0.15 0.05" material="arrow"/>
