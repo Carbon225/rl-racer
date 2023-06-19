@@ -18,7 +18,7 @@ class HoverV1(PipelineEnv):
         reset_noise_scale: float = 2.0,
         min_z: float = 0.5,
         max_distance: float = 5.0,
-        velocity_penalty: float = 0.05,
+        velocity_penalty: float = 0.01,
         max_ang_vel: jnp.ndarray = jnp.array([13.962634, 13.962634, 10.471976]),
         max_ang_acc: jnp.ndarray = jnp.array([13.962634, 13.962634, 10.471976]),
         gravity: float = 9.81,
