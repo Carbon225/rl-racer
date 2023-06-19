@@ -15,7 +15,7 @@ class HoverV1(PipelineEnv):
     def __init__(
         self,
         n_frames: int = 5,
-        reset_noise_scale: float = 0.1,
+        reset_noise_scale: float = 2.0,
         min_z: float = 0.5,
         max_distance: float = 5.0,
         max_ang_vel: jnp.ndarray = jnp.array([13.962634, 13.962634, 10.471976]),
@@ -47,15 +47,11 @@ class HoverV1(PipelineEnv):
         return 4
 
     def reset(self, rng: jnp.ndarray) -> State:
-        rng, rng1, rng2 = jax.random.split(rng, 3)
-
-        low, hi = -self._reset_noise_scale, self._reset_noise_scale
-        q = self.sys.init_q + jax.random.uniform(
-            rng1, (self.sys.q_size(),), minval=low, maxval=hi
-        )
-        qd = hi * jax.random.normal(rng2, (self.sys.qd_size(),))
+        q = self.sys.init_q
+        qd = self._reset_noise_scale * jax.random.normal(rng, (self.sys.qd_size(),))
 
         pipeline_state = self.pipeline_init(q, qd)
+        pipeline_state = self.pipeline_step(pipeline_state, jnp.zeros(self.sys.qd_size()))
         obs = self._get_obs(pipeline_state)
 
         reward, done, zero = jnp.zeros(3)
