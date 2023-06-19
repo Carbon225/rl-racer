@@ -15,14 +15,13 @@ class HoverV1(PipelineEnv):
     def __init__(
         self,
         n_frames: int = 5,
-        reset_noise_xyz: float = 2.0,
+        reset_noise_scale: float = 0.1,
         min_z: float = 0.5,
-        max_distance_from_target: float = 5.0,
+        max_distance: float = 5.0,
         max_ang_vel: jnp.ndarray = jnp.array([13.962634, 13.962634, 10.471976]),
         max_ang_acc: jnp.ndarray = jnp.array([13.962634, 13.962634, 10.471976]),
         gravity: float = 9.81,
         hover_throttle: float = 0.25,
-        hover_target: jnp.ndarray = jnp.array([0.0, 0.0, 3.0]),
         clip_obs: bool = False,
         **kwargs,
     ):
@@ -34,10 +33,10 @@ class HoverV1(PipelineEnv):
         inertia = sys.link.inertia.i[0].diagonal()
         mass = sys.link.inertia.mass[0]
 
-        self._reset_noise_xyz = reset_noise_xyz
+        self._reset_noise_scale = reset_noise_scale
         self._min_z = min_z
-        self._max_distance_from_target = max_distance_from_target
-        self._hover_target = hover_target
+        self._max_distance = max_distance
+        self._hover_target = sys.init_q[:3]
         self._max_ang_vel = max_ang_vel
         self._torque = inertia * max_ang_acc
         self._max_thrust = mass * gravity / hover_throttle
@@ -48,9 +47,13 @@ class HoverV1(PipelineEnv):
         return 4
 
     def reset(self, rng: jnp.ndarray) -> State:
-        xyz_noise = self._reset_noise_xyz
-        q = self.sys.init_q.at[:3].add(jax.random.uniform(rng, (3,), minval=-xyz_noise, maxval=xyz_noise))
-        qd = jnp.zeros((self.sys.qd_size(),))
+        rng, rng1, rng2 = jax.random.split(rng, 3)
+
+        low, hi = -self._reset_noise_scale, self._reset_noise_scale
+        q = self.sys.init_q + jax.random.uniform(
+            rng1, (self.sys.q_size(),), minval=low, maxval=hi
+        )
+        qd = hi * jax.random.normal(rng2, (self.sys.qd_size(),))
 
         pipeline_state = self.pipeline_init(q, qd)
         obs = self._get_obs(pipeline_state)
@@ -86,14 +89,14 @@ class HoverV1(PipelineEnv):
         distance = jnp.linalg.norm(self._hover_target - drone_xyz)
         drone_z = drone_xyz[2]
         healthy = jnp.where(
-            (drone_z > self._min_z) & (distance < self._max_distance_from_target),
+            (drone_z > self._min_z) & (distance < self._max_distance),
             1.0, 0.0
         )
         done = 1.0 - healthy
 
         # reward
 
-        reward = healthy * (1.0 - distance / self._max_distance_from_target)
+        reward = healthy * (1.0 - distance / self._max_distance)
 
         # observation
 
@@ -118,19 +121,13 @@ class HoverV1(PipelineEnv):
 
         drone_ang = pipeline_state.qd[3:]
 
-        target_vec = self._hover_target - pipeline_state.q[:3]
-        target_vec = drone_rot.do(Transform.create(pos=target_vec)).pos
-
         if self._clip_obs:
             drone_vel = jnp.clip(drone_vel, -1.0, 1.0)
             drone_ang = jnp.clip(drone_ang, -1.0, 1.0)
-            distance = jnp.linalg.norm(target_vec)
-            target_vec = target_vec / distance * jnp.clip(distance, 0.0, 1.0)
 
         return jnp.concatenate([
             drone_vel,
             drone_ang,
-            target_vec,
         ])
 
     def pipeline_step(

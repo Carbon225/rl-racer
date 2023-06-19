@@ -1,7 +1,7 @@
 <mujoco>
 
   <compiler angle="degree" meshdir="assets" texturedir="assets"/>
-
+  <option timestep="0.01" iterations="4" />
   <statistic center="0 0 3" extent="2.5"/>
 
   <visual>
@@ -11,7 +11,6 @@
   </visual>
 
   <asset>
-    <!-- <mesh file="drone.stl" scale="0.001 0.001 0.001"/> -->
     <texture type="2d" name="arrow" file="arrow.png"/>
     <material name="arrow" texture="arrow"/>
     <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
@@ -20,12 +19,6 @@
     <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="1 1" reflectance="0.2"/>
   </asset>
 
-  <default>
-    <!-- <default class="visual">
-      <geom contype="0" conaffinity="0"/>
-    </default> -->
-  </default>
-
   <worldbody>
 
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
@@ -33,7 +26,6 @@
 
     <body name="drone" pos="0 0 3">
       <freejoint name="drone_joint"/>
-      <!-- <geom mass="0.450" type="mesh" mesh="drone" euler="0 0 90"/> -->
       <geom mass="0.450" type="box" size="0.15 0.15 0.05" material="arrow"/>
     </body>
 
