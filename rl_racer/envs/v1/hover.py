@@ -85,14 +85,15 @@ class HoverV1(PipelineEnv):
         drone_xyz = pipeline_state.q[:3]
         distance = jnp.linalg.norm(self._hover_target - drone_xyz)
         drone_z = drone_xyz[2]
-        done = jnp.where(
-            (drone_z < self._min_z) | (distance > self._max_distance_from_target),
+        healthy = jnp.where(
+            (drone_z > self._min_z) & (distance < self._max_distance_from_target),
             1.0, 0.0
         )
+        done = 1.0 - healthy
 
         # reward
 
-        reward = -distance
+        reward = healthy * (1.0 - distance / self._max_distance_from_target)
 
         # observation
 
