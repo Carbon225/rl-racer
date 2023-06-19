@@ -15,14 +15,14 @@ class HoverV1(PipelineEnv):
     def __init__(
         self,
         n_frames: int = 5,
-        reset_noise_xy: float = 1.0,
-        reset_noise_z: float = 2.0,
-        min_z: float = 0.08,
+        reset_noise_xyz: float = 2.0,
+        min_z: float = 0.5,
+        max_distance_from_target: float = 5.0,
         max_ang_vel: jnp.ndarray = jnp.array([13.962634, 13.962634, 10.471976]),
         max_ang_acc: jnp.ndarray = jnp.array([13.962634, 13.962634, 10.471976]),
         gravity: float = 9.81,
         hover_throttle: float = 0.25,
-        hover_target: jnp.ndarray = jnp.array([0.0, 0.0, 1.0]),
+        hover_target: jnp.ndarray = jnp.array([0.0, 0.0, 3.0]),
         clip_obs: bool = False,
         **kwargs,
     ):
@@ -34,9 +34,9 @@ class HoverV1(PipelineEnv):
         inertia = sys.link.inertia.i[0].diagonal()
         mass = sys.link.inertia.mass[0]
 
-        self._reset_noise_xy = reset_noise_xy
-        self._reset_noise_z = reset_noise_z
+        self._reset_noise_xyz = reset_noise_xyz
         self._min_z = min_z
+        self._max_distance_from_target = max_distance_from_target
         self._hover_target = hover_target
         self._max_ang_vel = max_ang_vel
         self._torque = inertia * max_ang_acc
@@ -48,17 +48,8 @@ class HoverV1(PipelineEnv):
         return 4
 
     def reset(self, rng: jnp.ndarray) -> State:
-        rng1, rng2, rng3 = jax.random.split(rng, 3)
-
-        xy_min, xy_max = -self._reset_noise_xy, self._reset_noise_xy
-        z_noise = self._reset_noise_z
-
-        q = (
-            self.sys.init_q
-            .at[:2].add(jax.random.uniform(rng1, (2,), minval=xy_min, maxval=xy_max))
-            .at[2].add(jax.random.uniform(rng2, (), minval=0, maxval=z_noise))
-            .at[5].add(jax.random.uniform(rng3, (), minval=-jnp.pi, maxval=jnp.pi))
-        )
+        xyz_noise = self._reset_noise_xyz
+        q = self.sys.init_q.at[:3].add(jax.random.uniform(rng, (3,), -xyz_noise, xyz_noise))
         qd = jnp.zeros((self.sys.qd_size(),))
 
         pipeline_state = self.pipeline_init(q, qd)
@@ -89,10 +80,18 @@ class HoverV1(PipelineEnv):
         tau = jnp.concatenate([force_vec, torque_vec])
         pipeline_state = self.pipeline_step(pipeline_state0, tau)
 
-        # reward
+        # health
 
         drone_xyz = pipeline_state.q[:3]
-        distance = jnp.linalg.norm(drone_xyz - self._hover_target)
+        distance = jnp.linalg.norm(self._hover_target - drone_xyz)
+        drone_z = drone_xyz[2]
+        done = jnp.where(
+            (drone_z < self._min_z) | (distance > self._max_distance_from_target),
+            1.0, 0.0
+        )
+
+        # reward
+
         reward = -distance
 
         # observation
@@ -105,7 +104,7 @@ class HoverV1(PipelineEnv):
             reward=reward,
         )
         return state.replace(
-            pipeline_state=pipeline_state, obs=obs, reward=reward
+            pipeline_state=pipeline_state, obs=obs, reward=reward, done=done,
         )
 
     def _get_obs(self, pipeline_state: base.State) -> jnp.ndarray:
