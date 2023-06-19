@@ -49,7 +49,7 @@ class HoverV1(PipelineEnv):
 
     def reset(self, rng: jnp.ndarray) -> State:
         xyz_noise = self._reset_noise_xyz
-        q = self.sys.init_q.at[:3].add(jax.random.uniform(rng, (3,), -xyz_noise, xyz_noise))
+        q = self.sys.init_q.at[:3].add(jax.random.uniform(rng, (3,), minval=-xyz_noise, maxval=xyz_noise))
         qd = jnp.zeros((self.sys.qd_size(),))
 
         pipeline_state = self.pipeline_init(q, qd)
